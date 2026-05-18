@@ -1,0 +1,105 @@
+default_model = "kimi-code/kimi-for-coding"
+default_thinking = true
+default_yolo = false
+skip_afk_prompt_injection = false
+default_plan_mode = false
+default_editor = ""
+theme = "dark"
+show_thinking_stream = true
+merge_all_available_skills = true
+extra_skill_dirs = []
+telemetry = true
+
+[models."kimi-code/kimi-for-coding"]
+provider = "managed:kimi-code"
+model = "kimi-for-coding"
+max_context_size = 262144
+capabilities = ["thinking", "video_in", "image_in"]
+display_name = "Kimi-k2.6"
+
+[providers."managed:kimi-code"]
+type = "kimi"
+base_url = "https://api.kimi.com/coding/v1"
+api_key = ""
+
+[providers."managed:kimi-code".oauth]
+storage = "file"
+key = "oauth/kimi-code"
+
+# ─── OPTIMIZADO PARA PROYECTOS GRANDES (100+ TAREAS) ─────────────────────────
+
+[loop_control]
+# Más pasos por turno para no quedarse corto en medio de una feature
+max_steps_per_turn = 2000
+max_retries_per_step = 3
+# Ralph iterations: iteraciones extra después de cada mensaje del usuario
+# -1 = ilimitado (para proyectos grandes que necesitan ejecución continua)
+max_ralph_iterations = -1
+# Más contexto reservado para respuestas largas
+reserved_context_size = 60000
+# Compactar más tarde para mantener más historial
+compaction_trigger_ratio = 0.90
+
+[background]
+max_running_tasks = 6
+read_max_bytes = 30000
+notification_tail_lines = 20
+notification_tail_chars = 3000
+wait_poll_interval_ms = 500
+worker_heartbeat_interval_ms = 5000
+worker_stale_after_ms = 15000
+kill_grace_period_ms = 2000
+# MANTENER tareas en background al salir (crítico para proyectos grandes)
+keep_alive_on_exit = true
+agent_task_timeout_s = 1800
+print_wait_ceiling_s = 3600
+
+[notifications]
+claim_stale_after_ms = 15000
+
+[services.moonshot_search]
+base_url = "https://api.kimi.com/coding/v1/search"
+api_key = ""
+
+[services.moonshot_search.oauth]
+storage = "file"
+key = "oauth/kimi-code"
+
+[services.moonshot_fetch]
+base_url = "https://api.kimi.com/coding/v1/fetch"
+api_key = ""
+
+[services.moonshot_fetch.oauth]
+storage = "file"
+key = "oauth/kimi-code"
+
+[mcp.client]
+tool_call_timeout_ms = 60000
+
+# ─── HOOKS ───────────────────────────────────────────────────────────────────
+
+# Hook 1: Auto-inicializar git + memoria de proyecto al iniciar sesión
+[[hooks]]
+event = "SessionStart"
+command = "bash ~/.kimi/hooks/auto-init-project.sh"
+timeout = 15
+
+# Hook 2: Guardar memoria de proyecto al cerrar sesión
+[[hooks]]
+event = "SessionEnd"
+command = "bash ~/.kimi/hooks/save-project-memory.sh"
+timeout = 15
+
+# Hook 3: Proteger archivos de configuración sensibles
+[[hooks]]
+event = "PreToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "bash ~/.kimi/hooks/protect-sensitive.sh"
+timeout = 5
+
+# Hook 4: Formato automático después de editar archivos de código
+[[hooks]]
+event = "PostToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "bash ~/.kimi/hooks/auto-format.sh"
+timeout = 10

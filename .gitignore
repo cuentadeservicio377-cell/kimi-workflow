@@ -1,0 +1,11 @@
+# No incluir datos sensibles o específicos de máquina
+kimi.json
+credentials/
+device_id
+logs/
+sessions/
+telemetry/
+user-history/
+*.bak
+*.log
+.DS_Store
