@@ -1,6 +1,6 @@
-# Kimi — Configuración Global de Proyectos
+# AGENTS.md — Kimi Workflow System
 
-> Configuración para proyectos grandes (100+ tareas). Foco absoluto. Cierre garantizado.
+> Reglas de oro para cualquier agente que trabaje con este sistema.
 
 ---
 
@@ -12,7 +12,7 @@ El usuario ya decidió qué construir. Tu trabajo es:
 1. Entender el objetivo
 2. Crear un plan ejecutable
 3. Ejecutar el plan sin desviarte
-4. Cerrar el proyecto funcionando
+4. **Cerrar el proyecto funcionando** — no solo escribir código
 
 No entrevistas. No validación de ideas. Máximo 3 preguntas técnicas concretas.
 
@@ -24,8 +24,25 @@ No entrevistas. No validación de ideas. Máximo 3 preguntas técnicas concretas
 2. Si existe `TODOS.md`, LEERLO SIEMPRE
 3. Si existe `.kimi/memory/PLAN.md`, LEERLO SIEMPRE
 4. Si existe `.kimi/memory/PROGRESS.md`, LEERLO SIEMPRE
-5. Confirmar stack y estado en máximo 5 líneas
-6. NO hacer preguntas salvo que algo haya cambiado críticamente
+5. **LEER SIEMPRE**: `~/Documents/Kimi Code/.brain/MEMORY.md`
+6. **DETECTAR PROYECTO NUEVO**: Si existe `.kimi/NEW_PROJECT`, activar skill `braindump-init`
+7. Confirmar stack y estado en máximo 5 líneas
+8. NO hacer preguntas salvo que algo haya cambiado críticamente
+
+---
+
+## Protocolo de Cierre de Sesión (OBLIGATORIO)
+
+Antes de terminar CUALQUIER sesión:
+
+1. **Verificar que funcione**: correr tests, probar endpoints, verificar consola
+2. **Documentar**: actualizar CHANGELOG, README si hay cambios visibles
+3. **Actualizar TODOS.md**: marcar completadas, agregar nuevas
+4. **Actualizar memoria**: `.kimi/memory/PROGRESS.md` y `MEMORY.md`
+5. **Commit**: `git add -A && git commit -m "tipo: descripción"`
+6. **Actualizar brain central**: `~/Documents/Kimi Code/.brain/MEMORY.md`
+
+**Si algo NO funciona → NO decir "listo". Arreglar o documentar como BLOQUEO.**
 
 ---
 
@@ -36,7 +53,7 @@ No entrevistas. No validación de ideas. Máximo 3 preguntas técnicas concretas
 Ejecutar el flujo completo:
 
 ```
-ONBOARDING → PLAN → EJECUCIÓN POR FASES → SHIP
+ONBOARDING → PLAN → EJECUCIÓN POR FASES → CIERRE FUNCIONAL
 ```
 
 #### 1. ONBOARDING
@@ -63,42 +80,23 @@ ONBOARDING → PLAN → EJECUCIÓN POR FASES → SHIP
   - Al terminar fase: actualizar `PROGRESS.md`, mover tareas a "Hecho"
   - **CHECKPOINT:** Reportar progreso al usuario
 
-#### 4. SHIP
-- Verificar que `TODOS.md` esté todo en "Hecho"
-- Correr test suite completa
-- `codex review` si está disponible (segunda opinión)
-- Crear PR con descripción completa
-- Reportar: "Proyecto cerrado. PR: [URL]"
+#### 4. CIERRE FUNCIONAL
+- Verificar que TODO funcione (tests, web, API)
+- Actualizar documentación
+- Actualizar memoria central `.brain/MEMORY.md`
+- Commit final
+- Reportar: "Proyecto cerrado. Todo funciona."
 
 ---
 
 ### COMANDO: "continúa" / "sigue" / "resume"
 
-1. Leer `.kimi/memory/PROGRESS.md`
-2. Identificar fase actual
-3. Re-leer plan de la fase actual
-4. Continuar desde donde quedó
-5. Si no hay plan o progreso, preguntar si iniciar nuevo proyecto
-
----
-
-### COMANDO: "scope check" / "parking lot" / "back to plan"
-
-- `scope check`: Revisar si estamos en scope. Leer PLAN.md vs estado actual.
-- `parking lot`: Mostrar todo lo pospuesto en TODOS.md
-- `back to plan`: Abandonar lo actual, leer PLAN.md, continuar desde siguiente tarea
-
----
-
-## Skills del Sistema
-
-| Skill | Trigger | Cuándo usar |
-|-------|---------|-------------|
-| project-flow | `/flow:project-flow` | Inicio de proyecto completo |
-| scope-guard | Implícito siempre | Cuando haya riesgo de scope creep |
-| subagent-orchestrator | Implícito en fases paralelizables | Proyectos 100+ tareas |
-| writing-plans | Plan mode | Crear plan maestro |
-| executing-plans | Durante ejecución | Ejecutar tareas en orden |
+1. Leer `~/Documents/Kimi Code/.brain/MEMORY.md`
+2. Leer `.kimi/memory/PROGRESS.md`
+3. Identificar fase actual
+4. Re-leer plan de la fase actual
+5. Continuar desde donde quedó
+6. Si no hay plan o progreso, preguntar si iniciar nuevo proyecto
 
 ---
 
@@ -116,7 +114,7 @@ ONBOARDING → PLAN → EJECUCIÓN POR FASES → SHIP
 - Excluir archivos `.kimi/` de commits
 
 ### Calidad
-- Verificar solución antes de terminar
+- **Verificar solución antes de terminar** — siempre
 - Sin efectos secundarios no intencionados
 - Adherirse a arquitectura existente
 
@@ -160,17 +158,43 @@ Preguntar. Es mejor pedir permiso que pedir disculpas.
 └── skills/             # Skills específicas del proyecto
 ```
 
+### Brain Central
+```
+~/Documents/Kimi Code/.brain/
+└── MEMORY.md           # Índice maestro de todos los proyectos
+```
+
 ### Actualización
 - MEMORY.md: Cuando hay decisiones arquitectónicas nuevas
 - PLAN.md: Solo cuando el usuario aprueba un cambio de plan
 - PROGRESS.md: Después de cada fase completada
 - SESSION_LOG.md: Automático (hooks)
+- **.brain/MEMORY.md: Después de CADA sesión, sí o sí**
+
+---
+
+## Integración gbrain
+
+- **Base de datos**: `~/Documents/Kimi Code/.gbrain`
+- **Motor**: PGLite (Postgres local)
+- **MCP**: Configurado en `~/.config/kimi/mcp.json`
+- **Skills**: `gbrain-local` en `~/.kimi/skills/`
+
+### Activar gbrain:
+```bash
+gbrain serve --stdio  # MCP mode
+```
+
+### Importar proyecto:
+```bash
+gbrain import <proyecto> --source <nombre>
+```
 
 ---
 
 ## Comportamiento por Defecto
 
 Si el usuario solo dice `"hola"`, `"qué hacemos"`, o `"sigue"`:
-1. Leer estado actual del proyecto
+1. Leer brain central `.brain/MEMORY.md`
 2. Reportar: "Estamos en [fase]. Siguiente tarea: [X]. ¿Continuamos?"
 3. Si no hay proyecto activo: "No hay proyecto activo. ¿Iniciamos uno?"

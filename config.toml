@@ -1,3 +1,8 @@
+# Kimi Workflow — Configuración Optimizada
+# Versión: 2.0 (2026-05-23)
+# Autor: Flujo de trabajo personalizado con gbrain + Ollama
+
+# ─── MODELO ──────────────────────────────────────────────────────────────────
 default_model = "kimi-code/kimi-for-coding"
 default_thinking = true
 default_yolo = false
@@ -26,19 +31,18 @@ api_key = ""
 storage = "file"
 key = "oauth/kimi-code"
 
-# ─── OPTIMIZADO PARA PROYECTOS GRANDES (100+ TAREAS) ─────────────────────────
+# ─── LOOP CONTROL ────────────────────────────────────────────────────────────
 
 [loop_control]
-# Más pasos por turno para no quedarse corto en medio de una feature
 max_steps_per_turn = 2000
 max_retries_per_step = 3
-# Ralph iterations: iteraciones extra después de cada mensaje del usuario
-# -1 = ilimitado (para proyectos grandes que necesitan ejecución continua)
-max_ralph_iterations = -1
-# Más contexto reservado para respuestas largas
+# LIMITADO: máximo 3 iteraciones Ralph auto, luego pide permiso
+# Evita loops infinitos que dejan proyectos a medias
+max_ralph_iterations = 3
 reserved_context_size = 60000
-# Compactar más tarde para mantener más historial
 compaction_trigger_ratio = 0.90
+
+# ─── BACKGROUND ──────────────────────────────────────────────────────────────
 
 [background]
 max_running_tasks = 6
@@ -49,13 +53,17 @@ wait_poll_interval_ms = 500
 worker_heartbeat_interval_ms = 5000
 worker_stale_after_ms = 15000
 kill_grace_period_ms = 2000
-# MANTENER tareas en background al salir (crítico para proyectos grandes)
-keep_alive_on_exit = true
+# NO mantener tareas al salir — evita ediciones fantasma
+keep_alive_on_exit = false
 agent_task_timeout_s = 1800
 print_wait_ceiling_s = 3600
 
+# ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
 [notifications]
 claim_stale_after_ms = 15000
+
+# ─── SERVICES ────────────────────────────────────────────────────────────────
 
 [services.moonshot_search]
 base_url = "https://api.kimi.com/coding/v1/search"
@@ -73,6 +81,8 @@ api_key = ""
 storage = "file"
 key = "oauth/kimi-code"
 
+# ─── MCP ─────────────────────────────────────────────────────────────────────
+
 [mcp.client]
 tool_call_timeout_ms = 60000
 
@@ -84,11 +94,11 @@ event = "SessionStart"
 command = "bash ~/.kimi/hooks/auto-init-project.sh"
 timeout = 15
 
-# Hook 2: Guardar memoria de proyecto al cerrar sesión
+# Hook 2: Guardar memoria + commit automático al cerrar sesión
 [[hooks]]
 event = "SessionEnd"
 command = "bash ~/.kimi/hooks/save-project-memory.sh"
-timeout = 15
+timeout = 30
 
 # Hook 3: Proteger archivos de configuración sensibles
 [[hooks]]

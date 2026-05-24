@@ -1,0 +1,9 @@
+{
+  "engine": "pglite",
+  "database_path": "~/Documents/Kimi Code/.gbrain/brain.pglite",
+  "embedding_model": "ollama:nomic-embed-text",
+  "embedding_dimensions": 768,
+  "base_urls": {
+    "ollama": "http://localhost:11434/v1"
+  }
+}

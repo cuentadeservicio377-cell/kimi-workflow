@@ -1,141 +1,86 @@
 #!/bin/bash
-# install.sh — Instalador automático del Kimi Workflow
-# Uso: bash install.sh
+set -e
 
-set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KIMI_DIR="$HOME/.kimi"
+CONFIG_DIR="$HOME/.config/kimi"
+PROJECTS_DIR="$HOME/Documents/Kimi Code"
+BRAIN_DIR="$PROJECTS_DIR/.brain"
+GBRAIN_DIR="$PROJECTS_DIR/.gbrain"
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-KIMI_DIR="${HOME}/.kimi"
-BACKUP_DIR="${HOME}/.kimi.backup.$(date +%Y%m%d_%H%M%S)"
+echo "============================================"
+echo "  Kimi Workflow — Instalador Automático"
+echo "============================================"
+echo ""
 
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║         Kimi Workflow — Instalador Automático                ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
-echo
-
-# ─── 1. VERIFICAR KIMI INSTALADO ─────────────────────────────────────────────
-if ! command -v kimi >/dev/null 2>&1; then
-    echo "⚠️  Kimi Code CLI no encontrado en PATH."
-    echo "   Instálalo primero desde: https://kimi.com/coding"
-    exit 1
-fi
-
-echo "✅ Kimi Code CLI detectado: $(kimi --version 2>/dev/null || echo 'version unknown')"
-
-# ─── 2. BACKUP DE CONFIGURACIÓN EXISTENTE ────────────────────────────────────
-if [ -d "$KIMI_DIR" ]; then
-    echo "📦 Creando backup en: $BACKUP_DIR"
-    cp -r "$KIMI_DIR" "$BACKUP_DIR"
-    echo "✅ Backup completado"
-else
-    echo "📁 Creando directorio ~/.kimi/"
-    mkdir -p "$KIMI_DIR"
-fi
-
-echo
-
-# ─── 3. COPIAR ARCHIVOS PRINCIPALES ──────────────────────────────────────────
-echo "📝 Instalando configuración principal..."
-cp "$REPO_DIR/config.toml" "$KIMI_DIR/config.toml"
-cp "$REPO_DIR/AGENTS.md" "$KIMI_DIR/AGENTS.md"
-echo "   ✅ config.toml"
-echo "   ✅ AGENTS.md"
-
-# ─── 4. INSTALAR SKILLS ──────────────────────────────────────────────────────
-echo "🧠 Instalando skills..."
-mkdir -p "$KIMI_DIR/skills"
-for skill_dir in "$REPO_DIR"/skills/*/; do
-    skill_name=$(basename "$skill_dir")
-    mkdir -p "$KIMI_DIR/skills/$skill_name"
-    cp "$skill_dir"SKILL.md "$KIMI_DIR/skills/$skill_name/SKILL.md"
-    echo "   ✅ $skill_name"
-done
-
-# ─── 5. INSTALAR HOOKS ───────────────────────────────────────────────────────
-echo "🪝 Instalando hooks..."
+# 1. Crear directorios base
+echo "📁 Creando directorios..."
 mkdir -p "$KIMI_DIR/hooks"
-for hook in "$REPO_DIR"/hooks/*.sh; do
-    hook_name=$(basename "$hook")
-    cp "$hook" "$KIMI_DIR/hooks/$hook_name"
-    chmod +x "$KIMI_DIR/hooks/$hook_name"
-    echo "   ✅ $hook_name"
-done
+mkdir -p "$KIMI_DIR/skills"
+mkdir -p "$CONFIG_DIR"
+mkdir -p "$BRAIN_DIR"
+mkdir -p "$GBRAIN_DIR"
 
-# ─── 6. CREAR DIRECTORIOS DE SOPORTE ─────────────────────────────────────────
-echo "📂 Creando directorios de soporte..."
-mkdir -p "$KIMI_DIR"/{logs,sessions,plans,credentials,telemetry,user-history}
-echo "   ✅ Directorios creados"
+# 2. Copiar config.toml
+echo "⚙️  Instalando config.toml..."
+cp "$SCRIPT_DIR/config.toml" "$KIMI_DIR/config.toml"
 
-# ─── 7. AJUSTES DE PERMISOS ──────────────────────────────────────────────────
-echo "🔐 Ajustando permisos..."
-chmod 700 "$KIMI_DIR"
-chmod 600 "$KIMI_DIR/config.toml" 2>/dev/null || true
-echo "   ✅ Permisos ajustados"
+# 3. Copiar mcp.json
+echo "🔗 Instalando mcp.json..."
+cp "$SCRIPT_DIR/mcp.json" "$CONFIG_DIR/mcp.json"
 
-# ─── 8. VERIFICACIÓN ─────────────────────────────────────────────────────────
-echo
-echo "🔍 Verificando instalación..."
+# 4. Copiar gbrain-config.json template
+echo "🧠 Instalando gbrain-config.json..."
+cp "$SCRIPT_DIR/gbrain-config.json" "$GBRAIN_DIR/config.json"
 
-errors=0
+# 5. Copiar hooks
+echo "🪝 Instalando hooks..."
+cp "$SCRIPT_DIR/hooks/"*.sh "$KIMI_DIR/hooks/"
+chmod +x "$KIMI_DIR/hooks/"*.sh
 
-# Verificar config.toml
-if [ -f "$KIMI_DIR/config.toml" ]; then
-    echo "   ✅ config.toml presente"
-else
-    echo "   ❌ config.toml NO encontrado"
-    errors=$((errors + 1))
-fi
-
-# Verificar AGENTS.md
-if [ -f "$KIMI_DIR/AGENTS.md" ]; then
-    echo "   ✅ AGENTS.md presente"
-else
-    echo "   ❌ AGENTS.md NO encontrado"
-    errors=$((errors + 1))
-fi
-
-# Verificar skills
-for skill in project-flow scope-guard subagent-orchestrator; do
-    if [ -f "$KIMI_DIR/skills/$skill/SKILL.md" ]; then
-        echo "   ✅ Skill '$skill' presente"
-    else
-        echo "   ❌ Skill '$skill' NO encontrado"
-        errors=$((errors + 1))
+# 6. Copiar skills
+echo "🎯 Instalando skills..."
+for skill_dir in "$SCRIPT_DIR/skills/"*/; do
+    if [ -d "$skill_dir" ]; then
+        skill_name=$(basename "$skill_dir")
+        mkdir -p "$KIMI_DIR/skills/$skill_name"
+        cp "$skill_dir/"* "$KIMI_DIR/skills/$skill_name/"
+        echo "   ✅ $skill_name"
     fi
 done
 
-# Verificar hooks
-for hook in auto-format.sh auto-init-project.sh protect-sensitive.sh save-project-memory.sh; do
-    if [ -x "$KIMI_DIR/hooks/$hook" ]; then
-        echo "   ✅ Hook '$hook' presente y ejecutable"
-    else
-        echo "   ❌ Hook '$hook' NO encontrado o no ejecutable"
-        errors=$((errors + 1))
-    fi
-done
-
-# ─── 9. RESUMEN ──────────────────────────────────────────────────────────────
-echo
-echo "╔══════════════════════════════════════════════════════════════╗"
-if [ "$errors" -eq 0 ]; then
-    echo "║              ✅ INSTALACIÓN COMPLETADA                       ║"
-else
-    echo "║              ⚠️  INSTALACIÓN CON $errors ERRORES              ║"
+# 7. Crear brain central si no existe
+if [ ! -f "$BRAIN_DIR/MEMORY.md" ]; then
+    echo "🧠 Creando brain central..."
+    cp "$SCRIPT_DIR/templates/brain-central/MEMORY.md" "$BRAIN_DIR/MEMORY.md"
+    # Reemplazar placeholders
+    sed -i.bak "s/{DATE}/$(date +%Y-%m-%d)/g" "$BRAIN_DIR/MEMORY.md" 2>/dev/null || true
+    rm -f "$BRAIN_DIR/MEMORY.md.bak"
 fi
-echo "╚══════════════════════════════════════════════════════════════╝"
-echo
-echo "📋 Resumen:"
-echo "   • Directorio Kimi: $KIMI_DIR"
-echo "   • Backup anterior: $BACKUP_DIR"
-echo "   • Repo fuente:     $REPO_DIR"
-echo
-echo "🚀 Próximos pasos:"
-echo "   1. Abre una nueva terminal"
-echo "   2. Ve a cualquier directorio de proyecto"
-echo "   3. Ejecuta: kimi"
-echo "   4. Prueba: 'inicia proyecto' o '/flow:project-flow'"
-echo
-echo "📖 Para más detalles: cat $REPO_DIR/INSTALL.md"
-echo
 
-exit "$errors"
+echo ""
+echo "============================================"
+echo "  ✅ Instalación completa"
+echo "============================================"
+echo ""
+echo "Próximos pasos:"
+echo ""
+echo "1. Instalar Ollama:"
+echo "   brew install ollama"
+echo "   ollama pull nomic-embed-text"
+echo ""
+echo "2. Instalar gbrain:"
+echo "   bun install -g gbrain   # o npm install -g gbrain"
+echo ""
+echo "3. Inicializar gbrain:"
+echo "   export GB_CONFIG_PATH=\"$GBRAIN_DIR/config.json\""
+echo "   gbrain init --pglite --embedding-model ollama:nomic-embed-text --embedding-dimensions 768"
+echo ""
+echo "4. Verificar:"
+echo "   gbrain doctor --json"
+echo "   ollama list"
+echo ""
+echo "5. Leer INSTALL.md para guía completa:"
+echo "   cat $SCRIPT_DIR/INSTALL.md"
+echo ""
+echo "============================================"
